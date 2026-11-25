@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>《怪咖機器人阿鏘》兒童互動式數位繪本</title>
+  <meta name="description" content="《怪咖機器人阿鏘》兒童互動式數位繪本，適合國小三至四年級閱讀，探索自我接納、情緒理解與同理心陪伴。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 頂部控制與進度列 -->
+  <header class="app-header">
+    <div class="header-left">
+      <button id="home-btn" class="icon-btn" title="返回封面" aria-label="返回封面">
+        <span class="btn-icon">🏠</span>
+        <span class="btn-text">封面</span>
+      </button>
+      <div class="book-identity">
+        <h1 class="book-title">怪咖機器人阿鏘</h1>
+        <span id="page-indicator" class="page-indicator">故事頁數 1/11</span>
+      </div>
+    </div>
+
+    <!-- 頂部進度條 -->
+    <div class="header-center">
+      <div class="progress-bar-container" title="閱讀進度">
+        <div id="progress-bar" class="progress-bar" style="width: 9%;"></div>
+      </div>
+    </div>
+
+    <!-- 頂部音訊控制群 -->
+    <div class="header-right">
+      <!-- 旁白語音控制與語速切換 -->
+      <div class="audio-control-group narration-group">
+        <button id="narration-play-btn" class="icon-btn audio-btn" title="播放 / 暫停旁白" aria-label="播放旁白">
+          <span id="narration-icon" class="btn-icon">🔊</span>
+          <span id="narration-text" class="btn-text">旁白</span>
+        </button>
+        <button id="narration-replay-btn" class="icon-btn audio-btn" title="重新播放旁白" aria-label="重新播放旁白">
+          <span class="btn-icon">↺</span>
+        </button>
+        
+        <!-- 語速切換組 (0.8x, 1.0x, 1.2x) -->
+        <div class="speed-control-group" title="旁白語速調整">
+          <button type="button" class="speed-btn" data-speed="0.8" aria-label="0.8倍速">0.8×</button>
+          <button type="button" class="speed-btn active" data-speed="1.0" aria-label="正常語速">1.0×</button>
+          <button type="button" class="speed-btn" data-speed="1.2" aria-label="1.2倍速">1.2×</button>
+        </div>
+
+        <div class="volume-box" title="旁白音量">
+          <span class="vol-label">🗣️</span>
+          <input type="range" id="narration-vol" class="vol-slider" min="0" max="1" step="0.05" value="1" aria-label="旁白音量" />
+        </div>
+      </div>
+
+      <!-- 背景音樂控制 -->
+      <div class="audio-control-group bgm-group">
+        <button id="bgm-toggle-btn" class="icon-btn audio-btn" title="開關背景音樂" aria-label="開關音樂">
+          <span id="bgm-icon" class="btn-icon">🎵</span>
+          <span id="bgm-text" class="btn-text">音樂</span>
+        </button>
+        <div class="volume-box" title="音樂音量">
+          <input type="range" id="bgm-vol" class="vol-slider" min="0" max="1" step="0.05" value="0.35" aria-label="音樂音量" />
+        </div>
+      </div>
+
+      <!-- 自動朗讀切換 -->
+      <label class="toggle-control" title="翻頁時自動播放故事旁白">
+        <input type="checkbox" id="auto-narration-chk" checked />
+        <span class="toggle-track"></span>
+        <span class="toggle-label">自動朗讀</span>
+      </label>
+    </div>
+  </header>
+
+  <!-- 繪本主舞台區域 -->
+  <main class="storybook-stage">
+    <!-- 11 個場景容器 -->
+    <div class="stage-viewport">
+      
+      <!-- 1. 封面 -->
+      <section id="scene-0" class="scene active" data-page-index="0" data-page-title="封面">
+        <div class="scene-visual-box cover-box">
+          <img class="scene-img" src="assets/images/original/01封面.jpg" alt="怪咖機器人阿鏘封面 - 小宇與阿鏘坐在長椅上" />
+          
+          <!-- 上方天空留白區：標題與作者（不遮擋小宇與阿鏘） -->
+          <div class="cover-title-box">
+            <div class="cover-badge">SEL 探索成長繪本</div>
+            <h1 class="cover-main-title">怪咖機器人阿鏘</h1>
+            <p class="cover-author">文・圖 / 何語芸</p>
+            <p class="cover-subline">每個人、每個機器人，都有屬於自己的溫暖超能力。</p>
+          </div>
+
+          <!-- 下方草皮安全區：開始閱讀按鈕 -->
+          <div class="cover-action-box">
+            <button id="start-reading-btn" class="btn-primary start-btn">
+              <span>開始閱讀故事</span>
+              <span class="btn-arrow">➔</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. 扉頁 (序幕) -->
+      <section id="scene-1" class="scene" data-page-index="1" data-page-title="序幕">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/processed/02 扉頁.jpg" alt="扉頁 - 小宇的工作桌與藍圖" />
+          
+          <!-- 扉頁互動熱區層 (精確定位：右上角舊發條、藍圖下方小扳手) -->
+          <div id="flyleaf-hotspots" class="flyleaf-hotspots-layer">
+            <!-- 1. 舊發條熱區 (右上角金屬螺旋發條片) -->
+            <button id="hotspot-spring" class="hotspot-btn hotspot-spring" type="button" aria-label="找出舊發條" title="點擊找出：舊發條">
+              <span class="hotspot-halo"></span>
+              <span class="hotspot-tag">舊發條</span>
+            </button>
+
+            <!-- 2. 小扳手熱區 (藍圖正下方金屬雙頭扳手) -->
+            <button id="hotspot-wrench" class="hotspot-btn hotspot-wrench" type="button" aria-label="找出小扳手" title="點擊找出：小扳手">
+              <span class="hotspot-halo"></span>
+              <span class="hotspot-tag">小扳手</span>
+            </button>
+          </div>
+
+          <!-- 左側獨立引言與任務引導區 -->
+          <div class="flyleaf-content-card">
+            <div class="story-tag">序幕・喚醒舊物</div>
+            <h2 class="flyleaf-quote">「送給每一個偶爾也會手忙腳亂的你。」</h2>
+            <p class="flyleaf-text">擺滿各式各樣零件的工作桌上，散落著一張舊零件藍圖。<br>仔細觀察，找出讓阿鏘順利組裝與啟動的關鍵工具！</p>
+            
+            <!-- 扉頁任務卡片：符合中高年級 Maker 探索精神 -->
+            <div class="mission-box">
+              <div class="mission-header">
+                <span class="mission-icon">🔍</span>
+                <span class="mission-title">阿鏘還缺少關鍵零件！仔細觀察工作桌，找出組裝工具：</span>
+              </div>
+              
+              <div class="mission-checklist">
+                <div id="item-spring-status" class="mission-item">
+                  <span class="check-box">⚪</span>
+                  <div class="item-detail">
+                    <span class="item-name">舊發條（捲起來的金屬彈簧）</span>
+                    <span class="item-hint">這個捲起來的金屬零件叫作發條。猜猜看，它能怎麼幫助機械運作？</span>
+                  </div>
+                </div>
+                <div id="item-wrench-status" class="mission-item">
+                  <span class="check-box">⚪</span>
+                  <div class="item-detail">
+                    <span class="item-name">小扳手</span>
+                    <span class="item-hint">找找看，哪個工具能用來轉動螺帽？</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 完成提示訊息 -->
+              <div id="flyleaf-mission-msg" class="mission-status-msg">
+                請在右邊的工作桌上，點擊找出這兩樣工具。
+              </div>
+
+              <div class="mission-actions">
+                <button id="reset-flyleaf-btn" class="btn-subtle reset-task-btn" type="button" title="重新尋找零件">
+                  <span>重新尋找 ↺</span>
+                </button>
+                <button id="enter-story-btn" class="btn-primary enter-btn" type="button">
+                  <span>進入故事</span>
+                  <span class="btn-arrow">➔</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. 故事 1/7 -->
+      <section id="scene-2" class="scene" data-page-index="2" data-page-title="故事 1/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/original/0304日常.jpg" alt="故事 1/7 - 森林小學與炫光號登場" />
+          <div id="defect-slot-p34" class="defect-placeholder" title="修圖預留位置：炫光號九九乘法冷光資訊卡"></div>
+        </div>
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">森林小學的日常</span>
+          </div>
+          <p class="story-text">森林小學裡，大家都有最酷的智慧機器人。小莫的「炫光號」跑得最快，還能三秒背出九九乘法表，所有人都圍著它拍手叫好。</p>
+          
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="2">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（故事討論與思考）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情節理解</h4>
+                <p>炫光號有哪些厲害的功能？大家看到它時有什麼反應？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情緒與生活延伸</h4>
+                <p>如果你看見身邊的同學擁有了最新、最耀眼的物品或技能，你心裡通常會有什麼感受？你會怎麼表達？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>引導孩子覺察「羨慕」與「比較」的心態，討論每個人擁有的特長可能不同，不必用單一標準定義自己。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 4. 故事 2/7 -->
+      <section id="scene-3" class="scene" data-page-index="3" data-page-title="故事 2/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/original/0506第一幕 - 觸發.jpg" alt="故事 2/7 - 小宇組裝阿鏘、電線接錯、麵粉噴出" />
+          
+          <!-- 第二互動圖層：接線、紅色按鈕與麵粉噴發 (電線引向窗戶空間，避開小宇臉孔) -->
+          <div id="scene-0506-interactive-layer" class="interactive-overlay-layer">
+            <!-- 1. SVG 動態電線層：自原插座引向窗戶交會處 -->
+            <svg id="wire-svg" class="wire-svg-layer" viewBox="0 0 1000 562.5" preserveAspectRatio="none">
+              <!-- 左側自天花板懸掛插頭引出之電線，向右側窗戶延伸，完全避開小宇臉頰 (M 375,105 Q 425,125 455,170) -->
+              <path id="wire-left-path" class="wire-path" d="M 375,105 Q 425,125 455,170" />
+              <!-- 右側阿鏘身側引出之電線，向左側窗戶延伸 (M 600,340 Q 545,250 485,190) -->
+              <path id="wire-right-path" class="wire-path" d="M 600,340 Q 545,250 485,190" />
+              <!-- 接合連通電線 (自插頭經窗戶至阿鏘) (預設隱藏) -->
+              <path id="wire-connected-path" class="wire-path connected-path" d="M 375,105 Q 430,125 470,180 Q 545,250 600,340" style="display: none;" />
+              <!-- 電火花特效群組 (窗戶交會處 Center: 470, 180) -->
+              <g id="electric-sparks" class="sparks-group" style="display: none;">
+                <circle cx="470" cy="180" r="16" fill="#fffb91" opacity="0.9" />
+                <path d="M 470,157 L 474,174 L 492,176 L 476,186 L 482,204 L 468,190 L 452,198 L 462,182 L 448,170 L 466,172 Z" fill="#ffd000" />
+                <path d="M 458,167 L 465,177 L 460,182 L 475,180 L 470,188 L 484,176" stroke="#4ad2ff" stroke-width="3" fill="none" />
+              </g>
+            </svg>
+
+            <!-- 2. 接線熱區 (窗戶交會處：Center X: 47.0%, Y: 32.0%) -->
+            <button id="hotspot-wire" class="hotspot-wire-btn" type="button" aria-label="點擊接上電線" title="點擊把電線接起來">
+              <span class="wire-halo"></span>
+              <span class="wire-tag">點擊接電線</span>
+            </button>
+
+            <!-- 3. 阿鏘肚子紅色開關熱區 (Center X: 69.0%, Y: 68.4%) -->
+            <button id="hotspot-red-button" class="hotspot-red-switch-btn locked" type="button" aria-label="阿鏘紅色開關" title="按下紅色開關啟動阿鏘">
+              <span class="red-button-halo"></span>
+              <span class="red-button-indicator"></span>
+              <span class="red-button-tag">紅色開關</span>
+            </button>
+
+            <!-- 4. 滋啦！電火花泡泡提示 -->
+            <div id="comic-zap-bubble" class="comic-zap-bubble">滋啦！</div>
+
+            <!-- 5. 鏘——！阿鏘誕生字體橫幅 -->
+            <div id="comic-burst-banner" class="comic-burst-banner">鏘——！阿鏘誕生了！</div>
+
+            <!-- 6. 麵粉粒子 Canvas 畫布 -->
+            <canvas id="flour-canvas" class="flour-canvas"></canvas>
+          </div>
+        </div>
+
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">阿鏘誕生了！</span>
+          </div>
+          
+          <!-- 互動任務控制與引導面板 -->
+          <div class="stage-0506-task-panel">
+            <div class="task-step-indicator">
+              <span id="task-0506-status-icon" class="step-icon">🔌</span>
+              <span id="task-0506-guide-text" class="guide-text">幫小宇把電線接起來，再按下阿鏘肚子上的紅色開關！</span>
+            </div>
+
+            <div class="task-action-row">
+              <button id="reset-0506-btn" class="btn-subtle reset-0506-btn" type="button" title="重新體驗接線與噴粉">
+                <span>重新體驗 ↺</span>
+              </button>
+              <button id="continue-0506-btn" class="btn-primary continue-0506-btn" type="button" style="display: none;">
+                <span>繼續閱讀故事</span>
+                <span class="btn-arrow">➔</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="story-text">小宇買不起名牌機器人，他在倉庫翻出舊電鍋和天線，又把玉米粒、糖粉和麵粉放進去。「滋啦！」電線接錯了，阿鏘誕生了！肚子「鏘」一聲彈開，漫天白麵粉噴得小宇滿頭滿臉，變成一隻滑稽的白糖小河狸！</p>
+          
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="3">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（故事討論與思考）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情節理解</h4>
+                <p>小宇是用哪些材料組裝出阿鏘的？啟動時發生了什麼意外？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情緒與生活延伸</h4>
+                <p>動手創作時，如果結果不如預期甚至弄得一團糟（像被麵粉噴滿頭），你會感到生氣、沮喪，還是會覺得很好笑？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>讓孩子理解「探索與發明中難免伴隨出糗與意外」，學習用幽默感面對小差錯，挫折也是創造的一部分。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 5. 故事 3/7 (故事頁數 5/11) -->
+      <section id="scene-4" class="scene" data-page-index="4" data-page-title="故事 3/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/processed/0708第二幕 -衝突升高.jpg" alt="故事 3/7 - 阿鏘被問數學題、緊張冒煙震動" />
+          
+          <!-- 第三互動圖層：點擊觸發指針劇烈晃動、水滾沸騰、冒煙震動與爆表 -->
+          <div id="scene-0708-interactive-layer" class="interactive-overlay-layer">
+            <!-- 1. 機身震動與熱氣高溫光暈層 -->
+            <div id="achang-heat-glow" class="achang-heat-glow"></div>
+
+            <!-- 2. 動態蒸氣白煙效果 (左排氣口 X: 24.5%, Y: 18% 與右排氣口 X: 42.0%, Y: 15%) -->
+            <div id="steam-left-puff" class="steam-puff steam-left"></div>
+            <div id="steam-right-puff" class="steam-puff steam-right"></div>
+
+            <!-- 3. 動態獨立指針覆蓋層 (保留原圖色環刻度，僅疊加高擬真機械指針，軸心精準鎖定小圓點 X: 37.282%, Y: 59.831%) -->
+            <div id="meter-gauge-box" class="meter-gauge-box" role="button" tabindex="0" aria-label="點擊觀察阿鏘緊張指針劇烈晃動" title="點擊觀察指針劇烈晃動">
+              <svg class="meter-svg" viewBox="-50 -50 100 100">
+                <defs>
+                  <!-- 復古立體機械陰影 -->
+                  <filter id="needle-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="-0.8" dy="1.5" stdDeviation="1.2" flood-color="#1a1412" flood-opacity="0.5" />
+                  </filter>
+                  <linearGradient id="needle-bevel-left" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#4e4038" />
+                    <stop offset="100%" stop-color="#261e1b" />
+                  </linearGradient>
+                  <linearGradient id="needle-bevel-right" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#1f1816" />
+                    <stop offset="100%" stop-color="#3d322b" />
+                  </linearGradient>
+                </defs>
+
+                <!-- 旋轉指針 (旋轉中心精準固定在小圓點 0, 0，預設平靜指向左側水平藍色端 -90 度) -->
+                <g id="meter-needle" class="meter-needle" transform="rotate(-90)" filter="url(#needle-shadow)">
+                  <!-- 針身主體：立體金屬雙斜面 (左亮右暗，針尖長度精準落在色環中間) -->
+                  <path d="M 0 -37.5 L -3.2 -28 L -2 0 L 0 0 Z" fill="url(#needle-bevel-left)" />
+                  <path d="M 0 -37.5 L 3.2 -28 L 2 0 L 0 0 Z" fill="url(#needle-bevel-right)" />
+                  <!-- 箭頭中心稜線高光 -->
+                  <line x1="0" y1="-37.5" x2="0" y2="0" stroke="#947e70" stroke-width="0.7" stroke-linecap="round" />
+                  <!-- 針尾配重端 (平滑收於中心轉軸內) -->
+                  <path d="M -2 0 L -1.5 4.5 L 1.5 4.5 L 2 0 Z" fill="#261e1b" />
+                  <!-- 中心金屬固定軸心與同心黃銅鉚釘（精準扣在原圖小圓點上） -->
+                  <circle cx="0" cy="0" r="5.2" fill="#2d2624" stroke="#4e4038" stroke-width="1.0" />
+                  <circle cx="0" cy="0" r="3.2" fill="#3a302a" />
+                  <circle cx="0" cy="0" r="1.6" fill="#d49e35" stroke="#f4b434" stroke-width="0.5" />
+                </g>
+              </svg>
+            </div>
+
+            <!-- 4. 點擊開始互動熱區按鈕 (覆蓋阿鏘肚子上的紅色圓形按鈕幾何中心 Center X: 37.85%, Y: 71.72%) -->
+            <button id="hotspot-achang-belly" class="hotspot-achang-belly" type="button" aria-label="點擊阿鏘肚子上的紅色按鈕觀察指針劇烈晃動" title="點擊紅色按鈕觀察變化">
+              <span class="scene-hint-halo belly-halo"></span>
+              <span class="scene-hint-tag belly-tag">點擊開始觀察指針 👆</span>
+            </button>
+
+            <!-- 5. 啵嚕啵嚕！沸騰動態氣泡提示 -->
+            <div id="comic-boil-bubble-left" class="comic-boil-bubble bubble-left">啵嚕啵嚕！</div>
+            <div id="comic-boil-bubble-right" class="comic-boil-bubble bubble-right">啵嚕啵嚕！</div>
+
+            <!-- 6. 爆表警示橫幅 -->
+            <div id="comic-overload-banner" class="comic-burst-banner">💥 指針爆表了！阿鏘好緊張！</div>
+          </div>
+        </div>
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">衝突升高・好緊張</span>
+          </div>
+
+          <!-- 互動任務控制與引導面板 -->
+          <div class="stage-0708-task-panel">
+            <div class="task-step-indicator">
+              <span id="task-0708-status-icon" class="step-icon">🧭</span>
+              <span id="task-0708-guide-text" class="guide-text">點擊阿鏘肚子上的紅色按鈕或儀表，觀察指針劇烈晃動與緊張變化！</span>
+            </div>
+
+            <div class="task-action-row">
+              <button id="reset-0708-btn" class="btn-subtle reset-0708-btn" type="button" title="重新觀察緊張變化">
+                <span>重新觀察 ↺</span>
+              </button>
+              <button id="continue-0708-btn" class="btn-primary continue-0708-btn" type="button" style="display: none;">
+                <span>繼續閱讀故事</span>
+                <span class="btn-arrow">➔</span>
+              </button>
+            </div>
+          </div>
+
+          <p class="story-text">「阿鏘，算 6 乘 8 等於多少！」其他動物朋友都看著它。阿鏘好緊張，肚子開始「啵嚕啵嚕」劇烈震動，頭頂冒出陣陣白煙，指針快要爆表了！</p>
+          
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="4">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（故事討論與思考）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情節理解</h4>
+                <p>其他動物要阿鏘計算什麼題目？當阿鏘算不出來時，身體出現了哪些反應？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情緒與生活延伸</h4>
+                <p>當大家注視著你、或是突然被問倒時，你的身體也會像阿鏘一樣發熱、心跳加速或感到發抖嗎？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>協助孩子認識壓力和緊張的生理反應（心跳加速、冒冷汗、臉紅），學習辨識自己的焦慮並找到深呼吸的調節方式。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 6. 故事 4/7 (故事頁數 6/11) -->
+      <section id="scene-5" class="scene" data-page-index="5" data-page-title="故事 4/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/original/0910爆笑出糗.jpg" alt="故事 4/7 - 爆米花噴出、小宇溫柔擁抱阿鏘" />
+
+          <!-- 第四互動圖層：爆米花大爆發 (蓄力震動、鍋蓋彈跳、48顆爆米花散射、熱氣白煙) -->
+          <div id="scene-0910-interactive-layer" class="interactive-overlay-layer">
+            <!-- 1. 機身蓄力與爆發熱氣光暈 (覆蓋阿鏘電鍋本體 Center X: 48.0%, Y: 60.0%) -->
+            <div id="achang-popcorn-glow" class="achang-popcorn-glow"></div>
+
+            <!-- 2. 電鍋口爆破熱氣與煙霧雲團 (白煙膨脹散開) -->
+            <div id="popcorn-steam-burst" class="popcorn-steam-burst">
+              <span class="steam-puff puff-1" style="--dx: -15px;"></span>
+              <span class="steam-puff puff-2" style="--dx: 15px;"></span>
+              <span class="steam-puff puff-3" style="--dx: 0px;"></span>
+            </div>
+
+            <!-- 3. 動態彈跳電鍋蓋 (鍋蓋彈起旋轉拋擲) -->
+            <div id="cooker-lid-jump" class="cooker-lid-jump">
+              <svg viewBox="0 0 120 70" class="cooker-lid-svg">
+                <defs>
+                  <linearGradient id="lid-metal-0910" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#f0f4f8"/>
+                    <stop offset="35%" stop-color="#b8c2cc"/>
+                    <stop offset="70%" stop-color="#7a8794"/>
+                    <stop offset="100%" stop-color="#4d5761"/>
+                  </linearGradient>
+                  <linearGradient id="lid-handle-0910" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#2d3339"/>
+                    <stop offset="50%" stop-color="#555f69"/>
+                    <stop offset="100%" stop-color="#22262a"/>
+                  </linearGradient>
+                  <filter id="lid-shadow-0910" x="-30%" y="-30%" width="160%" height="160%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1a1412" flood-opacity="0.45" />
+                  </filter>
+                </defs>
+                <g filter="url(#lid-shadow-0910)">
+                  <!-- 提把 -->
+                  <rect x="52" y="8" width="16" height="12" rx="3" fill="url(#lid-handle-0910)"/>
+                  <circle cx="60" cy="8" r="5" fill="#3d444b"/>
+                  <!-- 鍋蓋圓拱 -->
+                  <ellipse cx="60" cy="38" rx="54" ry="24" fill="url(#lid-metal-0910)" stroke="#454e57" stroke-width="2"/>
+                  <!-- 鍋蓋邊緣反光捲邊 -->
+                  <ellipse cx="60" cy="40" rx="55" ry="12" fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.7"/>
+                  <ellipse cx="60" cy="42" rx="56" ry="12" fill="#58636e"/>
+                </g>
+              </svg>
+            </div>
+
+            <!-- 4. 48 顆爆米花動態拋物線粒子容器 -->
+            <div id="popcorn-particles-container" class="popcorn-particles-container"></div>
+
+            <!-- 5. 點擊開始互動熱區按鈕 (覆蓋阿鏘電鍋本體紅色開關幾何中心 Center X: 37.22%, Y: 66.81%) -->
+            <button id="hotspot-achang-cooker" class="hotspot-achang-cooker" type="button" aria-label="點擊電鍋開關，觸發爆米花大爆發" title="點擊電鍋開關觸發爆發">
+              <span class="scene-hint-halo cooker-halo"></span>
+              <span class="scene-hint-tag cooker-tag">點擊電鍋開關 👆</span>
+            </button>
+          </div>
+        </div>
+
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">爆笑出糗・接納的擁抱</span>
+          </div>
+
+          <!-- 互動任務控制與引導面板 -->
+          <div class="stage-0910-task-panel">
+            <div class="task-step-indicator">
+              <span id="task-0910-status-icon" class="step-icon">🍿</span>
+              <span id="task-0910-guide-text" class="guide-text">點擊阿鏘的電鍋開關，觸發爆米花大爆發！</span>
+            </div>
+
+            <div class="task-action-row">
+              <button id="reset-0910-btn" class="btn-subtle reset-0910-btn" type="button" title="重新播放爆米花爆發動畫" style="display: none;">
+                <span>重新爆發 ↺</span>
+              </button>
+              <button id="continue-0910-btn" class="btn-primary continue-0910-btn" type="button" style="display: none;">
+                <span>繼續閱讀故事</span>
+                <span class="btn-arrow">➔</span>
+              </button>
+            </div>
+          </div>
+          <p class="story-text">「鏘——！」一聲巨響，阿鏘肚子裡的玉米粒炸成 48 顆爆米花，像下雨一樣落在大家頭上！大家忍不住哈哈大笑。小宇的臉悄悄紅透了，卻沒有責怪阿鏘，只是輕輕抱住它：「沒關係……你只是太緊張了，對不對？」</p>
+          
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="5">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（故事討論與思考）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情節理解</h4>
+                <p>阿鏘最後沒有算出答案，反而噴出了什麼？小宇在出糗之後，對阿鏘做了什麼舉動？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">情緒與生活延伸</h4>
+                <p>如果你的好朋友在全班面前出糗了，你會跟著起鬨嘲笑，還是給他一個安慰與擁抱？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>強調同理心與「心理安全感」的重要性：真正的朋友是在挫折與出糗時，願意接納並說一聲「沒關係」的人。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 7. 故事 5/7 (故事 09–10 頁：第三幕：意外轉折) -->
+      <section id="scene-6" class="scene" data-page-index="6" data-page-title="故事 5/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/processed/1112第三幕：意外轉折.jpg" alt="故事 5/7 - 大寶考 58 分哭泣、小莫好心帶炫光號來幫忙、阿鏘擔憂地看著大寶" />
+
+          <!-- 互動覆蓋層 -->
+          <div class="interactive-overlay-layer scene-1112-overlay" id="scene-1112-overlay">
+            
+            <!-- 1. 考卷分數熱區 (Center: X=45.9%, Y=89.3%) -->
+            <button id="hotspot-exam-paper" class="hotspot-item hotspot-exam-paper" type="button" aria-label="點擊觀察考卷上的分數" title="點擊觀察考卷分數">
+              <span class="scene-hint-halo exam-halo"></span>
+              <span class="scene-hint-tag exam-tag">分數 👇</span>
+            </button>
+            <!-- 考卷情境觀察卡片 (位於考卷上方，絕不遮住考卷 58 分與文字) -->
+            <div class="observation-bubble exam-bubble" id="bubble-exam" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge score-badge">分數</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-exam" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text">這次考試，大寶只得到 58 分，和自己原本期待的成績有些落差。</p>
+            </div>
+
+            <!-- 2. 大寶表情觀察熱區 (Center: X=31.0%, Y=49.5%) -->
+            <button id="hotspot-dabao-cry" class="hotspot-item hotspot-dabao-cry" type="button" aria-label="點擊觀察大寶的表情與情緒" title="點擊觀察大寶的表情">
+              <span class="scene-hint-halo dabao-halo"></span>
+              <span class="scene-hint-tag dabao-tag">觀察大寶表情 👆</span>
+            </button>
+            <!-- 大寶情緒觀察卡片 (位於大寶左下方，不遮擋大寶臉部) -->
+            <div class="observation-bubble dabao-bubble" id="bubble-dabao" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge feeling-badge">難過與挫折 💧</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-dabao" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text">仔細看看大寶的表情，你覺得他現在可能有什麼感受？他躲在樹下、把臉埋在手心裡哭泣，感到非常失望與難過。</p>
+            </div>
+
+            <!-- 3. 小宇與阿鏘共同觀察熱區 (Center: X=81.0%, Y=60.5%) -->
+            <button id="hotspot-friends-concern" class="hotspot-item hotspot-friends-concern" type="button" aria-label="看看小宇和阿鏘的反應" title="看看小宇和阿鏘的反應">
+              <span class="scene-hint-halo friends-halo"></span>
+              <span class="scene-hint-tag friends-tag">看看小宇和阿鏘的反應 👆</span>
+            </button>
+            <!-- 小宇與阿鏘共同觀察卡片 (位於右上森林枝葉區，絕不遮擋兩人五官與表情) -->
+            <div class="observation-bubble friends-bubble" id="bubble-friends" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge care-badge">關心與同理 🌿</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-friends" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text"><strong>小宇和阿鏘注意到大寶哭得很傷心。</strong><br>仔細看看他們的表情，你覺得他們現在在想什麼？</p>
+            </div>
+
+          </div>
+        </div>
+
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">意外轉折・大寶的眼淚</span>
+          </div>
+
+          <!-- 互動任務與引導陪伴區 -->
+          <div class="stage-1112-task-panel" id="task-panel-1112">
+            <div class="task-status-row">
+              <div class="task-step-indicator">
+                <span class="step-icon" id="step-icon-1112">🔍</span>
+                <span class="guide-text" id="guide-text-1112">請點擊畫面中的「分數」、「大寶」與「小宇和阿鏘」進行觀察...</span>
+              </div>
+              <div class="task-action-row">
+                <button type="button" class="btn-subtle reset-1112-btn" id="reset-1112-btn" title="重新開始本場景觀察與選擇">
+                  <span>重新觀察 ↺</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- 觀察完成後展開的引導陪伴選擇卡片 -->
+            <div class="companion-choice-container" id="companion-choice-container" style="display: none;">
+              <h4 class="choice-title">💡 如果你的朋友因為考試成績不理想而難過，你會怎麼陪伴他？</h4>
+              <div class="choice-btn-group">
+                <button type="button" class="companion-btn" data-choice="A">
+                  <span class="choice-tag">方式 A</span>
+                  <span class="choice-text">先聽聽他怎麼想。</span>
+                </button>
+                <button type="button" class="companion-btn" data-choice="B">
+                  <span class="choice-tag">方式 B</span>
+                  <span class="choice-text">陪在他身邊，讓他知道有人關心。</span>
+                </button>
+                <button type="button" class="companion-btn" data-choice="C">
+                  <span class="choice-tag">方式 C</span>
+                  <span class="choice-text">等他心情平靜後，再一起想想可以怎麼做。</span>
+                </button>
+              </div>
+              <div class="choice-feedback-box" id="choice-feedback-box" style="display: none;">
+                <span class="feedback-icon">✨</span>
+                <p class="feedback-text" id="feedback-text"></p>
+              </div>
+            </div>
+          </div>
+
+          <p class="story-text">大寶躲在樹下哭得全身發抖，數學考了 58 分。小莫好心帶炫光號來幫忙，但空中跳出的密密麻麻紅字算式與倒數計時，反而讓大寶壓力更大，哭得更傷心了。</p>
+
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="6">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（親子共讀與班級討論）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題一</h4>
+                <p>如果你是大寶的朋友，你會對他說什麼？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題二</h4>
+                <p>你有沒有曾經很努力，卻沒有得到預期結果的經驗？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>在朋友難過時，不急著指導或講大道理，先安頓情緒、同理感受，往往是最有力量的陪伴。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 8. 故事 6/7 -->
+      <section id="scene-7" class="scene" data-page-index="7" data-page-title="故事 6/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/original/1314第三幕：高潮與主動化解.jpg" alt="故事 6/7 - 小宇按下開關、阿鏘吐出笑臉棉花糖撫慰大寶" />
+
+          <!-- 互動覆蓋層：阿鏘暖心開關與棉花糖魔法 -->
+          <div class="interactive-overlay-layer scene-1314-overlay" id="scene-1314-overlay">
+            
+            <!-- 1. 阿鏘胸前暖金光芒層 -->
+            <div class="achang-heart-glow" id="achang-heart-glow"></div>
+
+            <!-- 2. 鍋口飄出的彩虹糖粉光霧流動 SVG -->
+            <svg class="magic-stream-svg" id="magic-stream-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="rainbow-stream-grad" x1="0%" y1="100%" x2="50%" y2="0%">
+                  <stop offset="0%" stop-color="#ffe600" stop-opacity="0.8"/>
+                  <stop offset="30%" stop-color="#ff7eb3" stop-opacity="0.85"/>
+                  <stop offset="70%" stop-color="#7afcff" stop-opacity="0.75"/>
+                  <stop offset="100%" stop-color="#fffb96" stop-opacity="0.9"/>
+                </linearGradient>
+                <filter id="stream-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur"/>
+                  <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+              </defs>
+              <path class="stream-line line-1" d="M 45 95 C 40 70, 30 45, 48 10" stroke="url(#rainbow-stream-grad)" stroke-width="4" fill="none" filter="url(#stream-glow)"/>
+              <path class="stream-line line-2" d="M 52 95 C 60 75, 45 40, 56 12" stroke="url(#rainbow-stream-grad)" stroke-width="3" fill="none" filter="url(#stream-glow)"/>
+              <path class="stream-line line-3" d="M 48 98 C 42 80, 52 50, 40 18" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.8"/>
+            </svg>
+
+            <!-- 3. 棉花糖微光光暈與星光集群 -->
+            <div class="marshmallow-magic-aura" id="marshmallow-magic-aura">
+              <div class="cloud-shimmer-ring"></div>
+            </div>
+
+            <!-- 4. 棉花糖魔法粒子畫布 (Canvas) -->
+            <canvas id="marshmallow-canvas" class="marshmallow-canvas"></canvas>
+
+            <!-- 5. 點擊開始互動熱區：阿鏘電鍋紅色按鍵 (Center: X=47.24%, Y=75.52%) -->
+            <button id="hotspot-achang-heart" class="hotspot-item hotspot-achang-heart" type="button" aria-label="點擊阿鏘紅色開關，啟動暖心魔法" title="輕按紅色開關啟動魔法">
+              <span class="scene-hint-halo heart-halo"></span>
+              <span class="scene-hint-tag heart-tag">輕按紅色開關 👆</span>
+            </button>
+          </div>
+        </div>
+
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">高潮與化解・溫暖的棉花糖</span>
+          </div>
+
+          <!-- 互動任務控制與引導面板 -->
+          <div class="stage-1314-task-panel" id="task-panel-1314">
+            <div class="task-status-row">
+              <div class="task-step-indicator">
+                <span class="step-icon" id="step-icon-1314">✨</span>
+                <span class="guide-text" id="guide-text-1314">小宇走上前，牽著阿鏘……請點擊阿鏘肚子上的紅色開關，啟動暖心魔法！</span>
+              </div>
+              <div class="task-action-row">
+                <button type="button" class="btn-subtle reset-1314-btn" id="reset-1314-btn" style="display: none;" title="重新觀看棉花糖魔法">
+                  <span>重新觀看 ↺</span>
+                </button>
+              </div>
+            </div>
+            <!-- 魔法完成後呈現的溫暖回饋卡 -->
+            <div class="warmth-feedback-box" id="warmth-feedback-box" style="display: none;">
+              <span class="feedback-icon">💖</span>
+              <p class="feedback-text">有時候，一個溫暖的小行動，就能讓別人的心情慢慢改變。</p>
+            </div>
+          </div>
+
+          <p class="story-text">小宇想起剛才出糗的自己，牽著阿鏘走上前，輕輕按下紅色開關。阿鏘胸前亮起暖金黃光芒，一聲清脆的「叮」，飄出彩色糖粉與一朵笑臉棉花糖。大寶咬了一口，眼淚瞬間變成笑容。</p>
+          
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="7">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（親子共讀與班級討論）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題一</h4>
+                <p>你覺得阿鏘為什麼想主動幫助大寶？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題二</h4>
+                <p>當朋友心情不好時，除了說安慰的話，你還能做些什麼？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>真正的陪伴不一定需要長篇大論，一個發自內心的溫暖小行動（如分享點心、默默守候），往往能為朋友帶來最深層的情緒撫慰。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 9. 故事 7/7 -->
+      <section id="scene-8" class="scene" data-page-index="8" data-page-title="故事 7/7">
+        <div class="scene-visual-box">
+          <img class="scene-img" src="assets/images/original/1516第三幕：收尾共鳴.jpg" alt="故事 7/7 - 夕陽下分享小蛋糕、每個人都有超能力" />
+
+          <!-- 第七互動圖層：收尾共鳴・溫暖自由探索 -->
+          <div class="interactive-overlay-layer scene-1516-overlay" id="scene-1516-overlay">
+            
+            <!-- 1. 阿鏘的小蛋糕溫暖微光層 -->
+            <div class="cupcake-warm-glow" id="cupcake-warm-glow"></div>
+
+            <!-- 2. 探索熱區 1：阿鏘的小蛋糕與阿鏘本體 (Center: X=47.8%, Y=84.0%) -->
+            <button id="hotspot-cupcakes" class="hotspot-item hotspot-cupcakes" type="button" aria-label="點擊阿鏘的小蛋糕，感受溫暖香氣" title="品嚐小蛋糕">
+              <span class="scene-hint-halo cupcake-halo"></span>
+              <span class="scene-hint-tag cupcake-tag">品嚐小蛋糕 🧁</span>
+            </button>
+
+            <!-- 3. 探索熱區 2：大寶幸福吃蛋糕 (Center: X=31.0%, Y=57.0%) -->
+            <button id="hotspot-dabao-smile" class="hotspot-item hotspot-dabao-smile" type="button" aria-label="看看大寶開心的笑容" title="大寶的安慰點心">
+              <span class="scene-hint-halo dabao-halo"></span>
+              <span class="scene-hint-tag dabao-tag">看看大寶 👆</span>
+            </button>
+
+            <!-- 4. 探索熱區 3：小宇與阿鏘溫暖牽手 (Center: X=56.0%, Y=70.0%) -->
+            <button id="hotspot-hands-together" class="hotspot-item hotspot-hands-together" type="button" aria-label="看看小宇與阿鏘牽手" title="溫暖牽手">
+              <span class="scene-hint-halo hands-halo"></span>
+              <span class="scene-hint-tag hands-tag">溫暖牽手 🤝</span>
+            </button>
+
+            <!-- 5. 探索熱區 4 與 5：炫光號與小莫開心陪伴 (雙熱區框：炫光號 + 小莫，中間置放提示標籤) -->
+            <button id="hotspot-mo-xuangguang" class="hotspot-item hotspot-mo-xuangguang" type="button" aria-label="看看炫光號" title="炫光號">
+              <span class="scene-hint-halo friends-halo"></span>
+            </button>
+            <button id="hotspot-xiaomo" class="hotspot-item hotspot-xiaomo" type="button" aria-label="看看小莫" title="小莫">
+              <span class="scene-hint-halo friends-halo"></span>
+            </button>
+            <div id="friends-tag-shared" class="scene-hint-tag friends-shared-tag" role="button" tabindex="0" aria-label="炫光號與小莫提示標籤">炫光號與小莫 ✨</div>
+
+            <!-- 探索對話氣泡卡片 (預設隱藏，點擊對應熱區展開，含 ✕ 關閉按鈕，絕不遮擋重要角色臉部) -->
+            <!-- 氣泡 1：小蛋糕 -->
+            <div class="observation-bubble cupcake-bubble" id="bubble-cupcakes" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge care-badge">草莓香氣與溫暖 🧁</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-cupcakes" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text"><strong>阿鏘端出剛出爐的小巧彩色蛋糕！</strong><br>冒著暖暖香甜的草莓熱氣，融化了大家的心情。</p>
+            </div>
+
+            <!-- 氣泡 2：大寶 -->
+            <div class="observation-bubble dabao-1516-bubble" id="bubble-dabao-1516" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge warm-badge">最棒的安慰點心 🍯</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-dabao-1516" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text"><strong>大寶吸吸鼻子，眼淚變成了笑容：</strong><br>「這是我吃過最棒的 58 分安慰點心！」</p>
+            </div>
+
+            <!-- 氣泡 3：牽手 -->
+            <div class="observation-bubble hands-1516-bubble" id="bubble-hands-1516" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge gold-badge">我們的超能力 🤝</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-hands-1516" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text"><strong>小宇緊緊牽著阿鏘的手：</strong><br>原來每個人、每個機器人，都有屬於自己的特別超能力！</p>
+            </div>
+
+            <!-- 氣泡 4：炫光號與小莫 -->
+            <div class="observation-bubble friends-1516-bubble" id="bubble-friends-1516" style="display: none;">
+              <div class="bubble-header">
+                <span class="bubble-badge joy-badge">溫暖的友誼 🎶</span>
+                <button type="button" class="bubble-close-btn" data-target="bubble-friends-1516" aria-label="關閉提示">✕</button>
+              </div>
+              <p class="bubble-text"><strong>炫光號螢幕跳出大大的笑臉：</strong><br>小莫也開心地笑著，黃昏的森林裡充滿了朋友的笑聲！</p>
+            </div>
+
+          </div>
+        </div>
+        <article class="story-caption-card">
+          <div class="caption-header">
+            <span class="scene-theme-tag">收尾共鳴・我們的超能力</span>
+          </div>
+
+          <!-- 互動任務控制與引導面板 -->
+          <div class="stage-1516-task-panel" id="task-panel-1516">
+            <div class="task-status-row">
+              <div class="task-step-indicator">
+                <span class="step-icon" id="step-icon-1516">🌅</span>
+                <span class="guide-text" id="guide-text-1516">夕陽灑在森林裡……點擊畫面中的角色或小蛋糕，感受大家溫暖的友誼～</span>
+              </div>
+              <div class="task-action-row">
+                <button type="button" class="btn-subtle reset-1516-btn" id="reset-1516-btn" style="display: none;" title="重置畫面提示">
+                  <span>重新探索 ↺</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <p class="story-text">夕陽下，大寶、小莫和小宇一起分享阿鏘做的小蛋糕。大寶吸吸鼻子：「這是我吃過最棒的 58 分安慰點心！」小宇握緊阿鏘的手。原來每個人、每個機器人，都有屬於自己的超能力。</p>
+          
+          <!-- 一起想想：故事討論卡片 -->
+          <div class="discussion-panel" data-scene="8">
+            <button type="button" class="discussion-toggle-btn" aria-expanded="false">
+              <span class="disc-icon">💡</span>
+              <span class="disc-title">一起想想（親子共讀與教學討論）</span>
+              <span class="disc-arrow">▾</span>
+            </button>
+            <div class="discussion-content">
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題一</h4>
+                <p>你覺得阿鏘有哪些特別的地方？這些特點帶來了什麼幫助？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題二</h4>
+                <p>如果班上有一位和大家不太一樣的同學，你會如何認識他、和他相處？</p>
+              </div>
+              <div class="disc-section">
+                <h4 class="disc-subtitle">問題三</h4>
+                <p>故事中哪個地方讓你印象最深刻？為什麼？</p>
+              </div>
+              <div class="disc-section disc-guide">
+                <h4 class="disc-subtitle">親師導讀小叮嚀</h4>
+                <p>引導孩子體會自我接納與多元價值：不必和別人一模一樣，接納自己的不完美，懂得同理與主動關懷，每個人都能成為重要的存在。</p>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- 10. 封底 (親子聊聊看) -->
+      <section id="scene-9" class="scene backcover-scene" data-page-index="9" data-page-title="親子聊聊看">
+        <div class="scene-visual-box backcover-visual-box">
+          <img class="scene-img backcover-img" src="assets/images/original/封底.jpg" alt="怪咖機器人阿鏘封底 - 親子聊聊看與阿鏘" />
+        </div>
+      </section>
+
+      <!-- 11. 感謝閱讀畫面 (結語) -->
+      <section id="scene-10" class="scene" data-page-index="10" data-page-title="結語">
+        <div class="thank-you-stage">
+          <div class="thank-you-card">
+            <div class="thank-badge">故事結語</div>
+            <h2 class="thank-title">謝謝你和阿鏘一起完成了這段旅程</h2>
+            <p class="thank-desc">阿鏘偶爾也會出糗，露出靦腆又可愛的一面，<br>但也懂得在朋友難過時給予溫柔的陪伴。<br>每一個人、每一個機器人，都是獨一無二的奇蹟！</p>
+            <div class="credits-box">
+              <p>《怪咖機器人阿鏘》互動式數位繪本</p>
+              <p>故事 / 繪圖：何語芸</p>
+              <p>教學主題：同理心陪伴</p>
+            </div>
+            <div class="thank-actions">
+              <button id="restart-book-btn" class="btn-primary restart-btn">
+                <span>重新閱讀故事 ↺</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 底部翻頁與導覽列 -->
+  <footer class="app-footer">
+    <div class="nav-controls">
+      <button id="prev-page-btn" class="nav-btn prev-btn" aria-label="上一頁">
+        <span class="arrow-icon">←</span>
+        <span>上一頁</span>
+      </button>
+
+      <!-- 頁碼導覽點 -->
+      <nav id="page-dots" class="page-dots" aria-label="頁面跳轉導覽"></nav>
+
+      <button id="next-page-btn" class="nav-btn next-btn" aria-label="下一頁">
+        <span>下一頁</span>
+        <span class="arrow-icon">→</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- 原生音訊播放器元件（隱藏） -->
+  <audio id="bgm-audio" src="assets/audio/music/背景音樂.mp3" loop preload="auto"></audio>
+  <audio id="narration-audio" preload="auto"></audio>
+
+  <script src="script.js"></script>
+</body>
+</html>
